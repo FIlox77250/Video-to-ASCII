@@ -2,17 +2,31 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 import cv2
 import numpy as np
+from functools import lru_cache
 
 class VideoToAscii:
     def __init__(self, root):
         self.root = root
         self.root.title("Convertisseur Vidéo en ASCII")
-        self.ASCII_CHARS = "@%#*+=-:. "
+        
+        self.ASCII_STYLES = {
+            "Standard": "@%#*+=-:. ",
+            "Détaillé": "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. ",
+            "Lettres": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+            "Symboles": "█▓▒░+=*:-. ",
+            "Binaire": "10 ",
+            "Simple": "@#%*+=-:. "
+        }
+        
         self.video_path = None
         self.cap = None
         self.is_playing = False
         self.aspect_ratio = "16:9"
         self.width = 100
+        self.current_style = "Standard"
+        self.frame_buffer = []
+        self.buffer_size = 10
+        
         self.create_widgets()
         
     def create_widgets(self):
@@ -22,11 +36,7 @@ class VideoToAscii:
         self.top_controls = ttk.Frame(self.main_frame)
         self.top_controls.pack(fill='x', pady=5)
         
-        self.select_btn = ttk.Button(
-            self.top_controls, 
-            text="Choisir une vidéo", 
-            command=self.select_video
-        )
+        self.select_btn = ttk.Button(self.top_controls, text="Choisir une vidéo", command=self.select_video)
         self.select_btn.pack(side=tk.LEFT, padx=5)
         
         self.format_frame = ttk.LabelFrame(self.top_controls, text="Format")
@@ -39,71 +49,67 @@ class VideoToAscii:
                        value="16:9", command=self.update_display).pack(side=tk.LEFT)
         ttk.Radiobutton(self.format_frame, text="4:3", variable=self.aspect_var, 
                        value="4:3", command=self.update_display).pack(side=tk.LEFT)
+
+        self.style_frame = ttk.LabelFrame(self.top_controls, text="Style ASCII")
+        self.style_frame.pack(side=tk.LEFT, padx=20)
+        self.style_var = tk.StringVar(value="Standard")
+        style_menu = ttk.Combobox(self.style_frame, textvariable=self.style_var, 
+                                values=list(self.ASCII_STYLES.keys()), width=10)
+        style_menu.pack(side=tk.LEFT)
+        style_menu.bind('<<ComboboxSelected>>', lambda e: self.update_display())
         
         self.width_frame = ttk.LabelFrame(self.top_controls, text="Largeur ASCII")
         self.width_frame.pack(side=tk.LEFT, padx=20)
         
         self.width_var = tk.IntVar(value=100)
-        self.width_scale = ttk.Scale(
-            self.width_frame,
-            from_=50,
-            to=200,
-            orient=tk.HORIZONTAL,
-            variable=self.width_var,
-            command=lambda _: self.update_display()
-        )
+        self.width_scale = ttk.Scale(self.width_frame, from_=50, to=300,
+                                   orient=tk.HORIZONTAL, variable=self.width_var,
+                                   command=lambda _: self.update_display())
         self.width_scale.pack(side=tk.LEFT, padx=5)
         
-        self.text_display = tk.Text(
-            self.main_frame,
-            font=('Courier', 8),
-            wrap=tk.NONE
-        )
+        self.text_display = tk.Text(self.main_frame, font=('Courier', 8), wrap=tk.NONE, bg='black', fg='white')
         self.text_display.pack(expand=True, fill='both')
         
         self.x_scrollbar = ttk.Scrollbar(self.main_frame, orient=tk.HORIZONTAL, 
                                        command=self.text_display.xview)
         self.x_scrollbar.pack(fill=tk.X)
+        
         self.y_scrollbar = ttk.Scrollbar(self.main_frame, orient=tk.VERTICAL, 
                                        command=self.text_display.yview)
         self.y_scrollbar.pack(fill=tk.Y, side=tk.RIGHT)
         
-        self.text_display.configure(
-            xscrollcommand=self.x_scrollbar.set,
-            yscrollcommand=self.y_scrollbar.set
-        )
+        self.text_display.configure(xscrollcommand=self.x_scrollbar.set,
+                                  yscrollcommand=self.y_scrollbar.set)
         
         self.controls_frame = ttk.Frame(self.main_frame)
         self.controls_frame.pack(fill='x', pady=5)
         
-        self.play_btn = ttk.Button(
-            self.controls_frame,
-            text="Lecture",
-            command=self.toggle_play
-        )
+        self.play_btn = ttk.Button(self.controls_frame, text="Lecture",
+                                 command=self.toggle_play)
         self.play_btn.pack(side=tk.LEFT, padx=5)
         
-        self.progress = ttk.Scale(
-            self.controls_frame,
-            from_=0,
-            to=100,
-            orient=tk.HORIZONTAL,
-            command=self.seek_video
-        )
+        self.progress = ttk.Scale(self.controls_frame, from_=0, to=100,
+                                orient=tk.HORIZONTAL, command=self.seek_video)
         self.progress.pack(side=tk.LEFT, padx=5, expand=True, fill='x')
         
         self.status_var = tk.StringVar(value="Prêt")
         self.status_label = ttk.Label(self.main_frame, textvariable=self.status_var)
         self.status_label.pack(pady=5)
-    
+
+    @lru_cache(maxsize=1024)
+    def get_ascii_char(self, pixel_value, style):
+        chars = self.ASCII_STYLES[style]
+        return chars[int(pixel_value * (len(chars) - 1) / 255)]
+
     def select_video(self):
         self.video_path = filedialog.askopenfilename(
-            filetypes=[("Fichiers vidéo", "*.mp4 *.avi *.mkv *.mp3  ")]
+            filetypes=[("Fichiers vidéo", "*.mp4 *.avi *.mkv")]
         )
         if self.video_path:
             self.cap = cv2.VideoCapture(self.video_path)
             self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
             self.progress['to'] = self.total_frames
+            self.frame_buffer = []
             self.update_status()
             self.update_display()
     
@@ -120,14 +126,23 @@ class VideoToAscii:
     
     def image_to_ascii(self, image):
         width, height = self.calculate_dimensions(image)
-        resized = cv2.resize(image, (width, height))
+        resized = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
         gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        
+        style = self.style_var.get()
         ascii_str = ''
         for row in gray:
             for pixel_value in row:
-                ascii_str += self.ASCII_CHARS[pixel_value * len(self.ASCII_CHARS) // 256]
+                ascii_str += self.get_ascii_char(pixel_value, style)
             ascii_str += '\n'
         return ascii_str
+    
+    def preload_frames(self):
+        if len(self.frame_buffer) < self.buffer_size:
+            ret, frame = self.cap.read()
+            if ret:
+                ascii_frame = self.image_to_ascii(frame)
+                self.frame_buffer.append((frame, ascii_frame))
     
     def update_display(self):
         if self.cap is None:
@@ -144,6 +159,7 @@ class VideoToAscii:
         if self.cap:
             frame_no = int(float(value))
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no)
+            self.frame_buffer = []
             self.update_display()
     
     def toggle_play(self):
@@ -157,19 +173,32 @@ class VideoToAscii:
     def play_video(self):
         if not self.is_playing or self.cap is None:
             return
-        ret, frame = self.cap.read()
-        if ret:
-            ascii_frame = self.image_to_ascii(frame)
+            
+        if self.frame_buffer:
+            frame, ascii_frame = self.frame_buffer.pop(0)
             self.text_display.delete(1.0, tk.END)
             self.text_display.insert(1.0, ascii_frame)
             current_frame = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
             self.progress.set(current_frame)
             self.update_status()
+            self.preload_frames()
             self.root.after(40, self.play_video)
         else:
-            self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            self.is_playing = False
-            self.play_btn.configure(text="Lecture")
+            ret, frame = self.cap.read()
+            if ret:
+                ascii_frame = self.image_to_ascii(frame)
+                self.text_display.delete(1.0, tk.END)
+                self.text_display.insert(1.0, ascii_frame)
+                current_frame = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+                self.progress.set(current_frame)
+                self.update_status()
+                self.preload_frames()
+                self.root.after(40, self.play_video)
+            else:
+                self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                self.frame_buffer = []
+                self.is_playing = False
+                self.play_btn.configure(text="Lecture")
     
     def update_status(self):
         if self.cap:
