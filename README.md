@@ -56,22 +56,33 @@ python video_to_ascii.py
 ## ✨ Fonctionnalités
 
 ### 🎮 Interface interactive
-- 🎯 Lecture/Pause fluide
-- 📏 Contrôle de la largeur ASCII (50-200 caractères)
+- 🎯 Lecture/Pause fluide avec buffer de frames
+- 📏 Contrôle de la largeur ASCII (50-300 caractères)
 - 🖼️ Formats d'affichage adaptatifs
+- 🎨 6 styles ASCII différents
 
 ### 🎬 Support vidéo
 - 📺 Formats supportés : MP4, AVI, MKV
-- 🔄 Conversion en temps réel
-- ⚡ Performances optimisées
+- 🔄 Conversion en temps réel optimisée
+- ⚡ Cache des caractères pour meilleures performances
+- 🎦 Préchargement des frames
 
-### 🎨 Personnalisation
+### 🎨 Styles ASCII
+- 🔤 Standard : "@%#*+=-:. "
+- 📝 Détaillé : Set complet de caractères
+- 📑 Lettres : A-Z, a-z uniquement
+- 💠 Symboles : Blocs Unicode
+- 💻 Binaire : Style 1/0
+- 🎯 Simple : Version basique
+
+### 🛠️ Personnalisation
 - 📐 Formats multiples :
   - `Auto` : ratio original
   - `16:9` : format cinéma
   - `4:3` : format classique
 - 🔍 Interface redimensionnable
 - 📊 Barre de progression interactive
+- 🎪 Fond noir et texte blanc pour meilleur contraste
 
 ## 📖 Utilisation
 
@@ -82,7 +93,8 @@ python video_to_ascii.py
 
 2. **Configuration**
    - Cliquez sur `Choisir une vidéo`
-   - Sélectionnez le format souhaité
+   - Sélectionnez le style ASCII désiré
+   - Choisissez le format d'affichage
    - Ajustez la largeur avec le slider
 
 3. **Contrôles**
@@ -90,14 +102,19 @@ python video_to_ascii.py
    ▶️ : Lecture
    ⏸️ : Pause
    🔄 : Navigation temporelle
+   🎨 : Sélection du style
+   📐 : Ajustement de la taille
    ```
 
-## 🎯 Caractères ASCII
+## 🎯 Styles ASCII disponibles
 
 ```
-Intensité croissante
-◀️ @%#*+=-:. ▶️
-  Sombre → Clair
+Standard : @%#*+=-:. 
+Détaillé : $@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'. 
+Lettres  : ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+Symboles : █▓▒░+=*:-. 
+Binaire  : 10 
+Simple   : @#%*+=-:. 
 ```
 
 ## 🔧 Dépannage
@@ -116,7 +133,9 @@ pip list | grep -E "opencv-python|numpy"
 
 ### 🐌 Performances lentes
 - Réduire la largeur ASCII
+- Choisir un style plus simple
 - Vérifier la résolution source
+- Désactiver les styles complexes
 </details>
 
 ## ⚠️ Limitations
@@ -124,6 +143,7 @@ pip list | grep -E "opencv-python|numpy"
 - 🎥 Vidéos haute résolution : performances réduites
 - 📼 Certains codecs non supportés
 - 🖥️ Affichage dépendant de la police système
+- 🎪 Styles complexes peuvent ralentir l'affichage
 
 ## 🤝 Contribution
 
