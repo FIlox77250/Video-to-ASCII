@@ -140,6 +140,6 @@ Distribué sous la licence MIT. Voir `LICENSE` pour plus d'informations.
 <div align="center">
 
 ---
-Créé avec ❤️ par [Votre Nom]
+Créé avec ❤️ par Filox
 
 </div>
