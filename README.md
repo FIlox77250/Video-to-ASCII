@@ -50,7 +50,7 @@ git clone https://github.com/votre-username/video-to-ascii.git
 cd video-to-ascii
 
 # Lancer le programme
-python video_to_ascii.py
+python main.py
 ```
 
 ## ✨ Fonctionnalités
