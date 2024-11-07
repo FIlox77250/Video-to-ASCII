@@ -88,7 +88,7 @@ python main.py
 
 1. **Démarrage**
    ```bash
-   python video_to_ascii.py
+   python main.py
    ```
 
 2. **Configuration**
