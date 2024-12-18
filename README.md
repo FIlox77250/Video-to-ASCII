@@ -44,7 +44,7 @@ brew install python-tk
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/votre-username/video-to-ascii.git
+git clone https://github.com/Filox77250/video-to-ascii.git
 
 # Se déplacer dans le dossier
 cd video-to-ascii
